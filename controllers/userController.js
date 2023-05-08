@@ -1,7 +1,8 @@
 const CustomError = require("../config/customError");
 const User = require("../models/userModel");
 const generateToken = require("../config/jwtToken");
-
+const generateRefreshToken = require("../config/refreshToken");
+const jwt = require("jsonwebtoken");
 
 // signup user
 const createUser = async (req, res, next) => {
@@ -51,6 +52,21 @@ const loginUser = async (req, res, next) => {
         return next(new CustomError("Invalid  credentials!", 400))
     }
 
+    const refreshToken = await generateRefreshToken(isUser?.id);
+    console.log("refreshToken ::", refreshToken)
+
+    const updateUser = await User.findOneAndUpdate(isUser?._id, {
+        refreshToken: refreshToken,
+    }, {
+        new: true
+    })
+
+    console.log("updateUser ::", updateUser)
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 72 * 60 * 60 * 1000
+    })
     //response back to user
     res.status(200).json({
         status: true,
@@ -68,7 +84,32 @@ const loginUser = async (req, res, next) => {
 
 }
 
+const refreshTokenHandler = async (req, res, next) => {
+    const refreshToken = req?.cookies?.refreshToken;
+    // if no refresh token in cookie send error message to user 
+    if (!refreshToken) {
+        return next(new CustomError("There is no token in cookies!", 400))
+    }
 
+    //find user using refreshToken
+    const user = await User.findOne({ refreshToken });
+
+    //if no user in the db against that refresh token send error to user
+    if (!user) {
+        return next(new CustomError("No refreshToken in db in db or not match!", 400))
+    }
+
+    //verifying refreshToken
+    const verifyToken = await jwt.verify(refreshToken, process.env.JWT_SECRET);
+    //generate new token on the basis of that refresh token
+    const accessToken = await generateToken(verifyToken?.id);
+    //send the new access token in the response to user
+    res.status(200).json({
+        data: {
+            accessToken
+        }
+    })
+}
 // delete user
 const deleteUser = async (req, res, next) => {
 
@@ -177,7 +218,7 @@ const editUser = async (req, res, next) => {
 
 
 const blockUser = async (req, res, next) => {
-    const blockUser = await User.findByIdAndUpdate(req?.user?._id, {
+    const blockUser = await User.findByIdAndUpdate(req?.params?.id, {
         isBlocked: true
     }, {
         new: true
@@ -196,6 +237,25 @@ const blockUser = async (req, res, next) => {
 
 }
 
+const unBlockUser = async (req, res, next) => {
+    const unblockUser = await User.findOneAndUpdate(req?.params?.id, {
+        isBlocked: false
+    }, {
+        new: true
+    });
+
+    if (!unblockUser) {
+        return next(new CustomError("Unabled to unblock user!", 400))
+    }
+
+    res.status(200).json({
+        status: true,
+        data: {
+            user: unblockUser,
+            message: "Unblocked user successfully"
+        }
+    })
+}
 
 module.exports = {
     createUser,
@@ -206,4 +266,6 @@ module.exports = {
     getUser,
     getAllUsers,
     blockUser,
+    unBlockUser,
+    refreshTokenHandler
 }

@@ -1,16 +1,30 @@
 const express = require("express");
-const { createUser, getUser, loginUser, getAllUsers, deleteUser, updateUser, editUser, blockUser } = require("../controllers/userController")
-const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware")
+const {
+    createUser,
+    getUser,
+    loginUser,
+    getAllUsers,
+    deleteUser,
+    updateUser,
+    editUser,
+    blockUser,
+    unBlockUser,
+    refreshTokenHandler
+} = require("../controllers/userController")
+const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
+const validateMongodbId = require("../utils/validateMongodbId");
 const router = express.Router();
 
 router.post("/", createUser);
 router.post("/login", loginUser)
 router.get("/getAllUsers", getAllUsers)
-router.get("/getSingleUser/:id", authMiddleware, isAdmin, getUser)
-router.delete("/deleteUser/:id", deleteUser)
-router.put("/updateUser/:id", updateUser)
+router.get("/getSingleUser/:id", validateMongodbId, authMiddleware, isAdmin, getUser)
+router.delete("/deleteUser/:id", validateMongodbId, deleteUser)
+router.put("/updateUser/:id", validateMongodbId, updateUser)
 router.put("/editUser", authMiddleware, isAdmin, editUser)
-router.put("/blockUser", authMiddleware, isAdmin, blockUser)
+router.put("/blockUser/:id", validateMongodbId, authMiddleware, isAdmin, blockUser)
+router.put("/unBlockUser/:id", validateMongodbId, authMiddleware, isAdmin, unBlockUser)
+router.get("/refreshToken", refreshTokenHandler)
 
 
 module.exports = router;
