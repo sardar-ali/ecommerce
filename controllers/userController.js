@@ -53,15 +53,12 @@ const loginUser = async (req, res, next) => {
     }
 
     const refreshToken = await generateRefreshToken(isUser?.id);
-    console.log("refreshToken ::", refreshToken)
 
     const updateUser = await User.findOneAndUpdate(isUser?._id, {
         refreshToken: refreshToken,
     }, {
         new: true
     })
-
-    console.log("updateUser ::", updateUser)
 
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -82,6 +79,41 @@ const loginUser = async (req, res, next) => {
         }
     })
 
+}
+
+//user logout
+const logoutUser = async (req, res, next) => {
+    const cookie = req.cookies;
+    if (!cookie?.refreshToken) {
+        return next(new CustomError("There is no token in cookie!", 404))
+    }
+
+    const refreshToken = cookie?.refreshToken;
+    const user = await User.findOne({ refreshToken })
+
+    if (!user) {
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: true,
+        })
+        return res.status(204).json({
+            status: true,
+            message: "Cookies clear successfully!"
+        })
+    }
+
+
+    await User.findOneAndUpdate(refreshToken, { refreshToken: "" });
+
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: true,
+    })
+
+    res.status(204).json({
+        status: true,
+        message: "Logout successfully"
+    })
 }
 
 const refreshTokenHandler = async (req, res, next) => {
@@ -237,6 +269,7 @@ const blockUser = async (req, res, next) => {
 
 }
 
+
 const unBlockUser = async (req, res, next) => {
     const unblockUser = await User.findOneAndUpdate(req?.params?.id, {
         isBlocked: false
@@ -267,5 +300,6 @@ module.exports = {
     getAllUsers,
     blockUser,
     unBlockUser,
-    refreshTokenHandler
+    refreshTokenHandler,
+    logoutUser
 }
