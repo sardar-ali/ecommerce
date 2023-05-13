@@ -3,6 +3,7 @@ require("dotenv").config();
 const cookieParser = require("cookie-parser")
 const { dbConnection } = require("./config/dbConnection");
 const userRoutes = require("./routes/userRoutes");
+const productRoutes = require("./routes/productRoutes");
 const { notFound, errorHandler } = require("./middlewares/errorHanlder");
 
 const app = express();
@@ -17,6 +18,7 @@ dbConnection();
 
 //define all routes
 app.use(`${base_url}/user`, userRoutes);
+app.use(`${base_url}/product`, productRoutes);
 
 //added error middlewares
 app.use(notFound)

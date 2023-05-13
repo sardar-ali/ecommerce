@@ -34,7 +34,7 @@ const createUser = async (req, res, next) => {
 }
 
 
-//user Login
+// user Login
 const loginUser = async (req, res, next) => {
     const { email, password } = req?.body;
 
@@ -159,7 +159,7 @@ const deleteUser = async (req, res, next) => {
     })
 }
 
-//update user
+// update user
 const updateUser = async (req, res, next) => {
 
     const user = await User.findByIdAndUpdate(req?.params?.id, {
@@ -223,7 +223,7 @@ const getUser = async (req, res, next) => {
 }
 
 
-//update user
+// update user
 const editUser = async (req, res, next) => {
 
     const user = await User.findByIdAndUpdate(req?.user?._id, {
@@ -248,7 +248,7 @@ const editUser = async (req, res, next) => {
     })
 }
 
-
+// block user 
 const blockUser = async (req, res, next) => {
     const blockUser = await User.findByIdAndUpdate(req?.params?.id, {
         isBlocked: true
@@ -269,7 +269,7 @@ const blockUser = async (req, res, next) => {
 
 }
 
-
+// unblock user 
 const unBlockUser = async (req, res, next) => {
     const unblockUser = await User.findOneAndUpdate(req?.params?.id, {
         isBlocked: false
