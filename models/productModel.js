@@ -17,20 +17,28 @@ const productSchema = new mongoose.Schema({
         required: true,
     },
     category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
+        type: String,
+        required: true,
+        // type: mongoose.Schema.Types.ObjectId,
+        // ref: "Category",
     },
     brand: {
         type: String,
-        enum: ["apple", "lenovo", "samsing"],
+        required: true,
+        // type: String,
+        // enum: ["apple", "lenovo", "samsing"],
     },
-    quantity: Number,
+    quantity: {
+        type: Number,
+        required: true
+    },
     images: {
         type: Array,
 
     },
     color: {
         type: String,
+        required: true,
 
     },
     sold: {
