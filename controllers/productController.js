@@ -28,13 +28,55 @@ const createProduct = async (req, res, next) => {
 
 //get All products
 const getProducts = async (req, res, next) => {
-    // const query = req?.query ? req?.query : {};
-    // console.log("query :::", query)
-    const products = await Product.find()
+
+    //Filtering
+    const queryObj = { ...req?.query };
+    const excludeField = ["sort", "page", "limit", "fields"]
+    excludeField?.forEach((itm) => delete queryObj[itm]);
+    let queryStr = JSON.stringify(queryObj)
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`)
+    queryStr = JSON.parse(queryStr)
+
+    let products = Product.find(queryStr)
 
     if (!products) {
         return next(new CustomError("There is no Product in database!", 200))
     }
+
+    //Sorting
+    if (req?.query?.sort) {
+        let sortBy = req?.query?.sort.split(",").join(" ");
+        products = products.sort(sortBy)
+    } else {
+        products = products?.sort("-createdAt")
+    }
+
+    // 4) send limited fields in response
+    if (req?.query?.fields) {
+        const fields = req?.query?.fields?.split(",").join(" ");
+        products = products.select(fields)
+    } else {
+        products = products.select("-__v")
+    }
+
+
+    // paginatio=n
+    if (req?.query?.page && req?.query?.limit) {
+        const page = req?.query?.page;
+        const limit = req?.query?.limit;
+        const skip = (page - 1) * limit;
+        const productCount = await Product.countDocuments();
+        if (skip >= productCount) {
+            next(new CustomError("This page is not found!", 404))
+        }
+
+        products = products.skip(skip).limit(limit)
+
+
+    }
+
+    
+    products = await products;
 
     res.status(200).json({
         status: true,
