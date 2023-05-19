@@ -1,8 +1,10 @@
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto")
 const CustomError = require("../config/customError");
 const User = require("../models/userModel");
 const generateToken = require("../config/jwtToken");
 const generateRefreshToken = require("../config/refreshToken");
-const jwt = require("jsonwebtoken");
+const sendMail = require("../config/sendingMail")
 
 // signup user
 const createUser = async (req, res, next) => {
@@ -81,6 +83,7 @@ const loginUser = async (req, res, next) => {
 
 }
 
+
 //user logout
 const logoutUser = async (req, res, next) => {
     const cookie = req.cookies;
@@ -116,6 +119,7 @@ const logoutUser = async (req, res, next) => {
     })
 }
 
+//handle refresh token
 const refreshTokenHandler = async (req, res, next) => {
     const refreshToken = req?.cookies?.refreshToken;
     // if no refresh token in cookie send error message to user 
@@ -142,6 +146,8 @@ const refreshTokenHandler = async (req, res, next) => {
         }
     })
 }
+
+
 // delete user
 const deleteUser = async (req, res, next) => {
 
@@ -290,6 +296,100 @@ const unBlockUser = async (req, res, next) => {
     })
 }
 
+//update password
+const updatePassword = async (req, res, next) => {
+    const { password } = req?.body;
+
+    if (!password) {
+        next(new CustomError("Pawword is required!", 404))
+    }
+
+    const { _id } = req?.user;
+    const user = await User.findById(_id).select("+password");
+
+    if (!user) {
+        next(new CustomError("User not found!", 404))
+    }
+
+    if (!user.isPasswordMatched(password, user.password)) {
+        next(new CustomError("Your old password is not correct! ", 404))
+    }
+
+    user.password = password;
+    const updateUser = await user.save();
+
+
+    res.status(200).json({
+        status: true,
+        data: {
+            user: updateUser,
+            message: "Password updated successfully!"
+        }
+    })
+}
+
+// forgot password 
+const forgotPassword = async (req, res, next) => {
+    const { email } = req?.body;
+    if (!email) {
+        next(new CustomError("Email is required!", 404))
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        next(new CustomError("User not found by your poseted email"))
+    }
+
+    const resetToken = await user.createPasswordRestToken();
+
+    const resetUrl = `${req?.protocol}://${req.get("host")}/api/v1/user/resetPassword/${resetToken}`
+    const configration = {
+        to: user?.email,
+        subject: "Reset your password",
+        html: `Please follow this link to reset your password. this link is only valid for next 10 minutes <a href=${resetUrl}>Click Here</a>`
+    }
+
+    await sendMail(configration)
+
+    res.status(200).json({
+        status: true,
+        data: {
+            message: "Reset token sended on your email"
+        }
+    })
+}
+
+const resetPassword = async (req, res, next) => {
+
+    const { password } = req?.body;
+
+    const { token } = req?.params;
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({ passwordRestToken: hashedToken, passwordRestExpires: { $gt: Date.now() } }).select("+password");
+
+    if (!user) {
+        next(new CustomError("Token is expired user not found", 404))
+    }
+
+    user.password = password;
+    user.passwordRestExpires = undefined
+    user.passwordRestToken = undefined
+
+    await user.save();
+
+    res.status(200).json({
+        status: true,
+        data: {
+            user,
+            message: "Password reset successfully!"
+        }
+    })
+}
+
+
 module.exports = {
     createUser,
     loginUser,
@@ -301,5 +401,8 @@ module.exports = {
     blockUser,
     unBlockUser,
     refreshTokenHandler,
-    logoutUser
+    logoutUser,
+    updatePassword,
+    forgotPassword,
+    resetPassword
 }

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
+const crypto = require("crypto")
 
 //declear user schema
 const userSchema = new mongoose.Schema({
@@ -53,6 +54,10 @@ const userSchema = new mongoose.Schema({
     refreshToken: {
         type: String
     },
+    passwordChangedAt: Date,
+    passwordRestToken: String,
+    passwordRestExpires: Date,
+
 
 }, {
     timestamps: true
@@ -61,6 +66,7 @@ const userSchema = new mongoose.Schema({
 
 //hashed user password
 userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password, 12);
     next();
 })
@@ -68,6 +74,19 @@ userSchema.pre("save", async function (next) {
 // compare user plainPassword with hashed password in the dbs
 userSchema.methods.isPasswordMatched = async (plainPassword, hashedPassword) => {
     return await bcrypt.compare(plainPassword, hashedPassword);
+}
+
+userSchema.methods.createPasswordRestToken = async function () {
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    this.passwordRestToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    this.passwordRestExpires = Date.now() + 10 * 60 * 1000;
+
+    return resetToken;
+    // const restToken = crypto.randomBytes(32).toString("hex");
+    // this.passwordRestToken = crypto.createHash("sha256").update(restToken).digist("hex");
+    // this.passwordRestExpires = Date.now() + 10 * 60 * 1000 // expire in 10 mintues
+
+    // return restToken;
 }
 
 //initialize and export user model
