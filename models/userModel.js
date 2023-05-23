@@ -51,12 +51,12 @@ const userSchema = new mongoose.Schema({
             ref: "Product"
         }
     ],
-    refreshToken: {
-        type: String
-    },
     passwordChangedAt: Date,
     passwordRestToken: String,
     passwordRestExpires: Date,
+    refreshToken: {
+        type: String
+    },
 
 
 }, {
@@ -76,17 +76,13 @@ userSchema.methods.isPasswordMatched = async (plainPassword, hashedPassword) => 
     return await bcrypt.compare(plainPassword, hashedPassword);
 }
 
+// generate reset token 
 userSchema.methods.createPasswordRestToken = async function () {
     const resetToken = crypto.randomBytes(32).toString("hex");
     this.passwordRestToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     this.passwordRestExpires = Date.now() + 10 * 60 * 1000;
 
     return resetToken;
-    // const restToken = crypto.randomBytes(32).toString("hex");
-    // this.passwordRestToken = crypto.createHash("sha256").update(restToken).digist("hex");
-    // this.passwordRestExpires = Date.now() + 10 * 60 * 1000 // expire in 10 mintues
-
-    // return restToken;
 }
 
 //initialize and export user model

@@ -23,7 +23,7 @@ router.post("/", createUser);
 router.post("/login", loginUser)
 router.get("/logout", logoutUser)
 router.post("/forgotPassword", forgotPassword);
-router.post("/resetPassword/:token", resetPassword)
+router.put("/resetPassword/:token", resetPassword)
 router.put("/updatePassword", authMiddleware, updatePassword)
 router.get("/getAllUsers", getAllUsers)
 router.get("/getSingleUser/:id", validateMongodbId, authMiddleware, isAdmin, getUser)

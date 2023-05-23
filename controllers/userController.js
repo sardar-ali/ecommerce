@@ -352,6 +352,8 @@ const forgotPassword = async (req, res, next) => {
 
     await sendMail(configration)
 
+    await user.save();
+    
     res.status(200).json({
         status: true,
         data: {
@@ -360,6 +362,8 @@ const forgotPassword = async (req, res, next) => {
     })
 }
 
+
+//reset passowor
 const resetPassword = async (req, res, next) => {
 
     const { password } = req?.body;
