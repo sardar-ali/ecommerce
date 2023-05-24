@@ -5,6 +5,8 @@ const { dbConnection } = require("./config/dbConnection");
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const blogRoutes = require("./routes/blogRoutes")
+const categoryRoutes = require("./routes/categoryRoutes")
+const blogCategoryRoutes = require("./routes/blogCategoryRoutes")
 const { notFound, errorHandler } = require("./middlewares/errorHanlder");
 
 const app = express();
@@ -21,6 +23,8 @@ dbConnection();
 app.use(`${base_url}/user`, userRoutes);
 app.use(`${base_url}/product`, productRoutes);
 app.use(`${base_url}/blog`, blogRoutes);
+app.use(`${base_url}/category`, categoryRoutes);
+app.use(`${base_url}/blog_category`, blogCategoryRoutes);
 
 //added error middlewares
 app.use(notFound)
