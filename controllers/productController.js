@@ -1,4 +1,5 @@
 const Product = require("../models/productModel");
+const User = require("../models/userModel");
 const CustomError = require("../config/customError");
 const slugify = require("slugify")
 
@@ -75,7 +76,7 @@ const getProducts = async (req, res, next) => {
 
     }
 
-    
+
     products = await products;
 
     res.status(200).json({
@@ -123,6 +124,7 @@ const deleteProduct = async (req, res, next) => {
     })
 }
 
+
 //updated products
 const updateProduct = async (req, res, next) => {
     if (req?.body?.name) {
@@ -149,10 +151,57 @@ const updateProduct = async (req, res, next) => {
 }
 
 
+//LIKE BLOG
+const addToWishlist = async (req, res, next) => {
+    const { productId } = req?.body;
+
+    const userId = req?.user?._id;
+
+    const user = await User.findById(userId);
+
+    const alreadyAdded = user?.wishlist?.find((id) => id.toString() == productId);
+    //removed user from dislike if user want to like the blog
+    if (alreadyAdded) {
+
+        const user = await User.findByIdAndUpdate(userId, {
+            $pull: { wishlist: productId },
+        }, { new: true })
+
+        res.status(200).json({
+            status: true,
+            data: {
+                user,
+                message: "Product removed from wishlist successfully!"
+            }
+
+        })
+
+    } else {
+
+        const user = await User.findByIdAndUpdate(userId, {
+            $push: { wishlist: productId },
+        }, { new: true })
+
+        res.status(200).json({
+            status: true,
+            data: {
+                user,
+                message: "Product Added in wishlist successfully!"
+            }
+
+        })
+    }
+
+
+
+}
+
+
 module.exports = {
     createProduct,
     getProducts,
     getSingleProduct,
     deleteProduct,
-    updateProduct
+    updateProduct,
+    addToWishlist
 }
