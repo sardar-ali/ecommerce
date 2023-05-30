@@ -8,6 +8,7 @@ const productRoutes = require("./routes/productRoutes");
 const blogRoutes = require("./routes/blogRoutes")
 const categoryRoutes = require("./routes/categoryRoutes")
 const brandRoutes = require("./routes/brandRoutes")
+const couponRoutes = require("./routes/couponRoutes")
 const blogCategoryRoutes = require("./routes/blogCategoryRoutes")
 
 const app = express();
@@ -26,6 +27,7 @@ app.use(`${base_url}/product`, productRoutes);
 app.use(`${base_url}/blog`, blogRoutes);
 app.use(`${base_url}/category`, categoryRoutes);
 app.use(`${base_url}/brand`, brandRoutes);
+app.use(`${base_url}/coupon`, couponRoutes);
 app.use(`${base_url}/blog_category`, blogCategoryRoutes);
 
 //added error middlewares
