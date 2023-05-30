@@ -1,5 +1,7 @@
 const Blog = require("../models/blogModel")
 const CustomError = require("../config/customError");
+const cloadUploadingImg = require("../utils/fileUploadConfig");
+const fs = require("fs")
 
 //create blog 
 const createBlog = async (req, res, next) => {
@@ -219,6 +221,28 @@ const disLikeBlog = async (req, res, next) => {
     }
 }
 
+const uploadImages = async (req, res, next) => {
+    try {
+      const uploader = (path) => cloadUploadingImg(path, "images");
+      const urls = [];
+      const files = req.files;
+      for (const file of files) {
+        const { path } = file;
+        console.log("here path ::", path)
+        const newpath = await uploader(path);
+        console.log(newpath);
+        urls.push(newpath);
+        fs.unlinkSync(path);
+      }
+      const images = urls.map((file) => {
+        return file;
+      });
+      res.json(images);
+    } catch (error) {
+      next(error)
+    }
+}
+
 module.exports = {
     createBlog,
     updateBlog,
@@ -226,5 +250,6 @@ module.exports = {
     getSingleBlog,
     deleteBlog,
     likeBlog,
-    disLikeBlog
+    disLikeBlog,
+    uploadImages
 }
