@@ -1,7 +1,9 @@
 const Product = require("../models/productModel");
+const fs = require("fs");
 const User = require("../models/userModel");
 const CustomError = require("../config/customError");
-const slugify = require("slugify")
+const slugify = require("slugify");
+const cloadUploadingImg = require("../utils/fileUploadConfig");
 
 
 //create product
@@ -196,6 +198,28 @@ const addToWishlist = async (req, res, next) => {
 
 }
 
+const uploadImages = async (req, res, next) => {
+        try {
+          const uploader = (path) => cloadUploadingImg(path, "images");
+          const urls = [];
+          const files = req.files;
+          for (const file of files) {
+            const { path } = file;
+            console.log("here path ::", path)
+            const newpath = await uploader(path);
+            console.log(newpath);
+            urls.push(newpath);
+            fs.unlinkSync(path);
+          }
+          const images = urls.map((file) => {
+            return file;
+          });
+          res.json(images);
+        } catch (error) {
+          next(error)
+        }
+}
+
 
 module.exports = {
     createProduct,
@@ -203,5 +227,6 @@ module.exports = {
     getSingleProduct,
     deleteProduct,
     updateProduct,
-    addToWishlist
+    addToWishlist,
+    uploadImages
 }
