@@ -40,7 +40,8 @@ const blogSchema = new mongoose.Schema({
     auther: {
         type: String,
         default: "Admin"
-    }
+    },
+    images:[]
 }, {
     toJSON: {
         virtuals: true,
