@@ -84,6 +84,59 @@ const loginUser = async (req, res, next) => {
 }
 
 
+// admin Login
+const loginAdmin = async (req, res, next) => {
+    const { email, password } = req?.body;
+
+    if (!email || !password) {
+        return next(new CustomError("Email and Password are required!", 400))
+    }
+
+    const isAdmin = await User.findOne({ email }).select("+password");
+
+    if (!isAdmin) {
+        return next(new CustomError("Invalid Email  or Password!", 400))
+    }
+
+    if (isAdmin && isAdmin?.role !== "admin") {
+        return next(new CustomError("You are not Authorized", 400))
+    }
+
+    if (! await isAdmin?.isPasswordMatched(password, isAdmin?.password)) {
+        return next(new CustomError("Invalid  credentials!", 400))
+    }
+
+    const refreshToken = await generateRefreshToken(isAdmin?.id);
+
+    const updateUser = await User.findOneAndUpdate(isAdmin?._id, {
+        refreshToken: refreshToken,
+    }, {
+        new: true
+    })
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 72 * 60 * 60 * 1000
+    })
+
+    //response back to user
+    res.status(200).json({
+        status: true,
+        data: {
+            user: {
+                firstName: isAdmin?.firstName,
+                lastName: isAdmin?.lastName,
+                email: isAdmin?.email,
+                phone: isAdmin?.phone,
+                token: generateToken(isAdmin?._id)
+            },
+            message: "Logged in successfully"
+        }
+    })
+
+}
+
+
 //user logout
 const logoutUser = async (req, res, next) => {
     const cookie = req.cookies;
@@ -353,7 +406,7 @@ const forgotPassword = async (req, res, next) => {
     await sendMail(configration)
 
     await user.save();
-    
+
     res.status(200).json({
         status: true,
         data: {
@@ -393,10 +446,53 @@ const resetPassword = async (req, res, next) => {
     })
 }
 
+// get wishlist
+const getWishList = async (req, res, next) => {
+
+    const { _id } = req?.user
+
+    const user = await User.findById(_id).populate("wishlist")
+
+    if (!user) {
+        return next(new CustomError("User not found!", 404))
+    }
+
+    res.status(200).json({
+        status: true,
+        data: {
+            user
+        }
+    })
+}
+
+
+// update user
+const addAddress = async (req, res, next) => {
+
+    const user = await User.findByIdAndUpdate(req?.user?._id, {
+        address: req?.body?.address,
+    }, {
+        new: true
+    })
+
+    if (!user) {
+        return next(new CustomError("User Address is not updated!", 400))
+    }
+
+    res.status(200).json({
+        status: true,
+        data: {
+            user,
+            message: "User Address updated successfully"
+        }
+    })
+}
+
 
 module.exports = {
     createUser,
     loginUser,
+    loginAdmin,
     deleteUser,
     updateUser,
     editUser,
@@ -408,5 +504,7 @@ module.exports = {
     logoutUser,
     updatePassword,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    getWishList,
+    addAddress
 }

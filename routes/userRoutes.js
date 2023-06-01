@@ -3,6 +3,7 @@ const {
     createUser,
     getUser,
     loginUser,
+    loginAdmin,
     getAllUsers,
     deleteUser,
     updateUser,
@@ -13,7 +14,9 @@ const {
     logoutUser,
     updatePassword,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    getWishList,
+    addAddress
 } = require("../controllers/userController")
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const validateMongodbId = require("../utils/validateMongodbId");
@@ -21,10 +24,13 @@ const router = express.Router();
 
 router.post("/", createUser);
 router.post("/login", loginUser)
+router.post("/adminLogin", loginAdmin)
 router.get("/logout", logoutUser)
 router.post("/forgotPassword", forgotPassword);
 router.put("/resetPassword/:token", resetPassword)
 router.put("/updatePassword", authMiddleware, updatePassword)
+router.put("/addAddress", authMiddleware, addAddress)
+router.get("/getWishlist", authMiddleware, getWishList)
 router.get("/getAllUsers", getAllUsers)
 router.get("/getSingleUser/:id", validateMongodbId, authMiddleware, isAdmin, getUser)
 router.delete("/deleteUser/:id", validateMongodbId, deleteUser)
