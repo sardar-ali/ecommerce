@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto")
 const CustomError = require("../config/customError");
 const User = require("../models/userModel");
+const Cart = require("../models/cartModel");
+const Product = require("../models/productModel");
 const generateToken = require("../config/jwtToken");
 const generateRefreshToken = require("../config/refreshToken");
 const sendMail = require("../config/sendingMail")
@@ -488,6 +490,87 @@ const addAddress = async (req, res, next) => {
     })
 }
 
+// user add item cart
+const userCart = async (req, res, next) => {
+    const { cart } = req?.body;
+    const id = req?.body?.user;
+    const products = [];
+    const user = await User.findById(id);
+
+    if (!user) {
+        next(new CustomError("Something went worng!"))
+    }
+
+    // const alreadyExistInCart = await Cart.findOne({ orderBy: user })
+    // console.log("alreadyExistInCart ::", alreadyExistInCart)
+    // if (alreadyExistInCart) {
+    //     console.log("if here")
+    //     alreadyExistInCart.remove();
+    // }
+
+    for (let i = 0; i < cart.length; i++) {
+        const obj = {}
+        obj.product = cart[i]._id;
+        obj.count = cart[i].count;
+        obj.color = cart[i].color;
+        let productPrice = await Product.findById(cart[i]?._id).select("price").exec();
+        obj.price = productPrice.price;
+        products.push(obj)
+    }
+
+    const cartTotal = products.reduce((total, itm) => total + itm?.price, 0);
+
+    const response = await new Cart({
+        products,
+        cartTotal,
+        orderBy: id,
+
+    }).save();
+
+    res.status(200).json({
+        status: true,
+        data: {
+            cartItems: response
+        }
+    })
+
+}
+
+//get cart items of user
+const getUserCart = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const cartItems = await Cart.findOne({ orderBy: id }).populate("products.product", "name price color");
+
+        res.status(200).json({
+            status: true,
+            data: {
+                cartItems
+            }
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// delete all cart items
+const emptyUserCart = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const user = await User.findById(id);
+        await Cart.findOneAndRemove({ orderBy: user?._id });
+
+        res.status(200).json({
+            status: true,
+            data: {
+                message: "Cart items removed successfully"
+            }
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
 
 module.exports = {
     createUser,
@@ -506,5 +589,8 @@ module.exports = {
     forgotPassword,
     resetPassword,
     getWishList,
-    addAddress
+    addAddress,
+    userCart,
+    getUserCart,
+    emptyUserCart
 }
