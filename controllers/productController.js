@@ -198,6 +198,7 @@ const addToWishlist = async (req, res, next) => {
 
 }
 
+//imag upload
 const uploadImages = async (req, res, next) => {
         try {
           const uploader = (path) => cloadUploadingImg(path, "images");
@@ -220,6 +221,7 @@ const uploadImages = async (req, res, next) => {
         }
 }
 
+  
 
 module.exports = {
     createProduct,

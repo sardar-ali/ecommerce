@@ -4,6 +4,7 @@ const CustomError = require("../config/customError");
 const User = require("../models/userModel");
 const Cart = require("../models/cartModel");
 const Product = require("../models/productModel");
+const Coupon = require("../models/couponModel");
 const generateToken = require("../config/jwtToken");
 const generateRefreshToken = require("../config/refreshToken");
 const sendMail = require("../config/sendingMail")
@@ -540,6 +541,7 @@ const userCart = async (req, res, next) => {
 const getUserCart = async (req, res, next) => {
     try {
         const id = req.params.id;
+        console.log("id ::", id)
         const cartItems = await Cart.findOne({ orderBy: id }).populate("products.product", "name price color");
 
         res.status(200).json({
@@ -572,6 +574,38 @@ const emptyUserCart = async (req, res, next) => {
     }
 }
 
+//apply coupon on cart item
+const applyCoupon = async (req, res, next) => {
+    const { coupon } = req?.body;
+    const { _id } = req?.user;
+
+    const validCoupon = await Coupon.findOne({ name: coupon });
+
+    if (!validCoupon) {
+        next(new CustomError("Invalid coupon!"))
+    }
+
+    const user = await User.findById(_id);
+
+    const { cartTotal } = await Cart.findOne({ orderBy: user?._id }, "cartTotal");
+
+    if (!cartTotal) {
+        next(new CustomError("No prouduct in the cart!", 200))
+    }
+
+    let totalAfterDiscount = cartTotal - (cartTotal * validCoupon.discount) / 100;
+
+    const response = await Cart.findOneAndUpdate({ orderBy: user?._id }, { totalAfterDiscount }, { new: true });
+
+    res.status(200).json({
+        status: true,
+        data: {
+            data: response
+        }
+    })
+}
+
+
 module.exports = {
     createUser,
     loginUser,
@@ -592,5 +626,6 @@ module.exports = {
     addAddress,
     userCart,
     getUserCart,
-    emptyUserCart
+    emptyUserCart,
+    applyCoupon
 }
