@@ -543,7 +543,6 @@ const userCart = async (req, res, next) => {
 const getUserCart = async (req, res, next) => {
     try {
         const id = req.params.id;
-        console.log("id ::", id)
         const cartItems = await Cart.findOne({ orderBy: id }).populate("products.product", "name price color");
 
         res.status(200).json({
