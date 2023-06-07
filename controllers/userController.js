@@ -1,8 +1,10 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto")
+const uniqueid = require('uniqueid');
 const CustomError = require("../config/customError");
 const User = require("../models/userModel");
 const Cart = require("../models/cartModel");
+const Order = require("../models/orderModel");
 const Product = require("../models/productModel");
 const Coupon = require("../models/couponModel");
 const generateToken = require("../config/jwtToken");
@@ -606,6 +608,102 @@ const applyCoupon = async (req, res, next) => {
 }
 
 
+//create order 
+const createUserOrder = async (req, res, next) => {
+    const { COD, appliedCoupon } = req?.body;
+    if (!COD) {
+        next(new CustomError("Create Cash order faild!", 404))
+    }
+    const id = req?.user?._id;
+    const user = await User.findById(id);
+    const userCart = await Cart.findOne({ orderBy: user?._id });
+
+    let finalAmount = 0;
+    if (appliedCoupon && userCart?.totalAfterDiscount) {
+        finalAmount = userCart?.totalAfterDiscount;
+    } else {
+        finalAmount = userCart.cartTotal;
+    }
+
+    const order = await new Order({
+        products: userCart?.products,
+        paymentIntent: {
+            id: uniqueid(),
+            method: "COD",
+            amount: finalAmount,
+            currency: "US",
+            status: "Cash On Deliver",
+            created: Date.now(),
+        },
+        orderBy: user?._id,
+        orderStatus: "Cash On Deliver",
+
+    }).save();
+
+    let update = userCart.products.map((itm) => {
+        return {
+            updateOne: {
+                filter: { _id: itm?.product?._id },
+                update: { quantity: itm?.count - 1, sold: itm?.count + 1 }
+            }
+        }
+    });
+
+    const updated = await Product.bulkWrite(update, {});
+
+    res.status(200).json({
+        status: true,
+        data: {
+            order: updated,
+            message: "Order created successfully"
+        }
+    })
+}
+
+//get user Order
+const getUserOrder = async (req, res, next) => {
+    const { _id } = req?.user;
+
+    const userOrder = await Order.findOne({ orderBy: _id }).populate("products.product")
+
+    if (!userOrder) {
+        next(new CustomError("There is no order in database"))
+    }
+
+    res.status(200).json({
+        status: true,
+        data: {
+            orders: userOrder
+        }
+    })
+
+}
+
+
+//update order status
+const updateOrderStatus = async (req, res, next) => {
+    const { _id } = req?.user;
+    const { status } = req?.body;
+
+    const updateStatus = await Order.findOneAndUpdate(
+        { orderBy: _id },
+        {
+            orderStatus: status,
+            paymentIntent: { status }
+        }, {
+        new: true
+    });
+
+    console.log("updateStatus ::", updateStatus);
+
+    res.status(200).json({
+        status: true,
+        data: {
+            orderStatus: updateStatus
+        }
+    })
+}
+
 module.exports = {
     createUser,
     loginUser,
@@ -627,5 +725,8 @@ module.exports = {
     userCart,
     getUserCart,
     emptyUserCart,
-    applyCoupon
+    applyCoupon,
+    createUserOrder,
+    getUserOrder,
+    updateOrderStatus
 }

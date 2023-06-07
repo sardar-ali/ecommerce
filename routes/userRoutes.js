@@ -20,7 +20,10 @@ const {
     userCart,
     getUserCart,
     emptyUserCart,
-    applyCoupon
+    applyCoupon,
+    createUserOrder,
+    getUserOrder,
+    updateOrderStatus
 } = require("../controllers/userController")
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const validateMongodbId = require("../utils/validateMongodbId");
@@ -35,6 +38,9 @@ router.post("/cart", userCart);
 router.put("/resetPassword/:token", resetPassword)
 router.put("/updatePassword", authMiddleware, updatePassword)
 router.post("/applyCoupon", authMiddleware, applyCoupon)
+router.post("/createOrder", authMiddleware, createUserOrder)
+router.get("/getOrder", authMiddleware, getUserOrder)
+router.put("/updateOrderStatus", authMiddleware, updateOrderStatus)
 router.put("/addAddress", authMiddleware, addAddress)
 router.get("/getWishlist", authMiddleware, getWishList)
 router.get("/getAllUsers", getAllUsers)
