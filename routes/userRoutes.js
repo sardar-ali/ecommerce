@@ -23,13 +23,15 @@ const {
     applyCoupon,
     createUserOrder,
     getUserOrder,
-    updateOrderStatus
+    updateOrderStatus,
+    sendingVerificationOpt
 } = require("../controllers/userController")
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const validateMongodbId = require("../utils/validateMongodbId");
 const router = express.Router();
 
 router.post("/", createUser);
+router.post("/sendingOtp", sendingVerificationOpt);
 router.post("/login", loginUser)
 router.post("/adminLogin", loginAdmin)
 router.get("/logout", logoutUser)

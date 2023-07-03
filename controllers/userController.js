@@ -10,6 +10,15 @@ const Coupon = require("../models/couponModel");
 const generateToken = require("../config/jwtToken");
 const generateRefreshToken = require("../config/refreshToken");
 const sendMail = require("../config/sendingMail")
+const sendOTPVerification = require("../utils/sendingOtp")
+
+// sending otp on phone number
+const sendingVerificationOpt = async (req, res, next) => {
+    const number = req?.body?.phone;
+    const result = await sendOTPVerification(number, "8877");
+    console.log("result ::", result)
+
+}
 
 // signup user
 const createUser = async (req, res, next) => {
@@ -727,5 +736,6 @@ module.exports = {
     applyCoupon,
     createUserOrder,
     getUserOrder,
-    updateOrderStatus
+    updateOrderStatus,
+    sendingVerificationOpt
 }
